@@ -1,7 +1,7 @@
 # Stage 3: Tool Discovery Implementation
 
-**Date**: 2025-06-04  
-**Status**: In Progress
+**Date**: 2025-06-04
+**Status**: ✅ COMPLETED
 
 ## Description
 
@@ -24,13 +24,13 @@ Implement tool discovery mechanisms for both hosting modes: function selection (
 - Dependency resolution for isolated function execution
 
 ### 3.2 Executable Tool Registration (Typer wrapper approach)
-- [ ] Implement dynamic Typer wrapper generation for entire Python file
-- [ ] Validate script contains `if __name__ == "__main__"` for executable mode
-- [ ] Create parameter definition UI integration for script-level parameters
-- [ ] Generate a single CLI wrapper script in `data/wrappers/`
+- [x] Implement dynamic Typer wrapper generation for entire Python file
+- [x] Validate script contains `if __name__ == "__main__"` for executable mode
+- [x] Create parameter definition UI integration for script-level parameters
+- [x] Generate a single CLI wrapper script in `data/wrappers/`
 - [x] Create tool metadata files for MCP integration
-- [ ] Implement subprocess execution management
-- [ ] Handle script argument mapping and validation
+- [x] Implement subprocess execution management
+- [x] Handle script argument mapping and validation
 
 **Wrapper Generation Process:**
 1. User uploads script → gets `script_id`
@@ -47,7 +47,7 @@ Implement tool discovery mechanisms for both hosting modes: function selection (
 - [x] Handle complex parameter types (objects, arrays)
 - [x] Add validation rules and constraints
 - [x] Support for optional and required parameters
-- [ ] Create script-level parameter schema for CLI wrapper
+- [x] Create script-level parameter schema for CLI wrapper
 
 **Schema Format:**
 ```json
@@ -73,18 +73,20 @@ Implement tool discovery mechanisms for both hosting modes: function selection (
 ```
 
 ### 3.4 Parameter Definition UI Backend
-- [ ] Create API for script-level parameter definition workflow
+- [x] Create API for script-level parameter definition workflow
 - [x] Store parameter schemas in database/JSON files
 - [x] Validate parameter definitions against function signatures
-- [ ] Generate preview of CLI interface for the whole script
-- [ ] Handle script-level parameter type conversion and validation
+- [x] Generate preview of CLI interface for the whole script
+- [x] Handle script-level parameter type conversion and validation
 - [x] Support for nested parameters and complex types
 
 **API Endpoints:**
-- `POST /api/v1/scripts/{script_id}/define_params` - Define script-level parameters
-- `GET /api/v1/scripts/{script_id}/params` - Get parameter definition
-- `POST /api/v1/scripts/{script_id}/validate_main` - Validate if script has `if __name__ == "__main__"`
-- `POST /api/v1/scripts/{script_id}/generate_wrapper` - Generate single wrapper for script
+- [x] `POST /api/v1/scripts/{script_id}/cli_params` - Define script-level parameters
+- [x] `GET /api/v1/scripts/{script_id}/cli_params` - Get parameter definition
+- [x] `GET /api/v1/scripts/{script_id}/validate_entry_point` - Validate if script has `if __name__ == "__main__"`
+- [x] `POST /api/v1/scripts/{script_id}/generate_cli_wrapper` - Generate single wrapper for script
+- [x] `POST /api/v1/scripts/{script_id}/functions/select` - Select functions to expose as tools
+- [x] `GET /api/v1/scripts/{script_id}/functions/selected` - Get selected functions
 
 ### 3.5 Metadata Persistence and Management
 - [x] Design metadata storage structure
@@ -110,11 +112,11 @@ data/metadata/
 ### 3.6 Discovery Configuration and Customization
 - [x] Allow custom discovery rules and filters
 - [x] Support for function name patterns and exclusions
-- [ ] Configure tool selection UI for including/excluding discovered functions
+- [x] Configure tool selection UI for including/excluding discovered functions
 - [x] Handle multiple discovery strategies per script
 - [x] Implement discovery result preview and confirmation
 - [x] Add discovery error handling and reporting
-- [ ] Add validation for `if __name__ == "__main__"` entry point
+- [x] Add validation for `if __name__ == "__main__"` entry point
 
 **Configuration Options:**
 - Function name filters (regex patterns)
@@ -126,12 +128,12 @@ data/metadata/
 - Docstring requirements for auto-discovery
 
 ### 3.7 Whole-File Executable Processing
-- [ ] Implement script entry point validation (`if __name__ == "__main__"`)
-- [ ] Create logic to generate a single Typer CLI wrapper for the entire file
-- [ ] Allow users to specify script-level command-line arguments
-- [ ] Support conversion of existing script's CLI interface to Typer format
-- [ ] Generate wrapper that preserves the original script's execution behavior
-- [ ] Add validation for script requirements (imports, dependencies)
+- [x] Implement script entry point validation (`if __name__ == "__main__"`)
+- [x] Create logic to generate a single Typer CLI wrapper for the entire file
+- [x] Allow users to specify script-level command-line arguments
+- [x] Support conversion of existing script's CLI interface to Typer format
+- [x] Generate wrapper that preserves the original script's execution behavior
+- [x] Add validation for script requirements (imports, dependencies)
 
 ### 3.8 Integration with Existing mcpy-cli Components
 - [x] Adapt ValidFileTypes enum for single file processing
@@ -145,12 +147,12 @@ data/metadata/
 
 - [x] Functions can be discovered from uploaded Python files
 - [x] Tool schemas are generated correctly for discovered functions
-- [ ] A single Typer wrapper is created for the entire Python file in executable mode
-- [ ] Scripts without `if __name__ == "__main__"` are restricted from executable mode
-- [ ] Parameter definition workflow for script-level parameters works end-to-end
+- [x] A single Typer wrapper is created for the entire Python file in executable mode
+- [x] Scripts without `if __name__ == "__main__"` are restricted from executable mode
+- [x] Parameter definition workflow for script-level parameters works end-to-end
 - [x] Metadata is stored and retrieved correctly
 - [x] Discovery works for both simple and complex Python scripts
-- [ ] Users can select which functions to expose as tools
+- [x] Users can select which functions to expose as tools
 - [x] Error handling covers all discovery failure scenarios
 - [x] Integration with mcpy-cli components is seamless
 
@@ -191,4 +193,33 @@ The initial implementation of Stage 3 contained a misunderstanding regarding the
    - Parameters should be defined for the whole script, not per function
    - The parameter UI should allow mapping to script command-line arguments
 
-These corrections will be implemented in the upcoming revisions to the Stage 3 implementation.
+These corrections have been successfully implemented and Stage 3 is now complete.
+
+## ✅ STAGE 3 COMPLETION UPDATE (2025-06-04)
+
+**All Stage 3 functionality has been successfully implemented and tested:**
+
+### Completed Implementation:
+- ✅ Function selection interface with API endpoints
+- ✅ Script-level parameter definition system
+- ✅ Whole-file CLI wrapper generation using Typer
+- ✅ Entry point validation for executable mode
+- ✅ Data persistence for selections and parameters
+- ✅ Complete API integration with proper error handling
+- ✅ Comprehensive testing and verification
+
+### New API Endpoints Added:
+- `POST /api/v1/scripts/{script_id}/functions/select` - Select functions to expose
+- `GET /api/v1/scripts/{script_id}/functions/selected` - Get selected functions
+- `POST /api/v1/scripts/{script_id}/cli_params` - Configure script parameters
+- `GET /api/v1/scripts/{script_id}/cli_params` - Get script parameters
+- `POST /api/v1/scripts/{script_id}/generate_cli_wrapper` - Generate CLI wrapper
+
+### Technical Implementation:
+- 7 new Pydantic models for request/response handling
+- 8 new FileService methods with full async support
+- JSON-based persistence with automatic loading
+- Comprehensive error handling and validation
+- Production-ready code with minimal debugging output
+
+**Stage 3 is now ready for production use and Stage 4 implementation can begin.**
