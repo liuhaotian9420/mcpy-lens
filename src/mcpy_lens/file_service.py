@@ -41,6 +41,8 @@ from mcpy_lens.models import (
     ScriptListResponse,
     EntryPointValidationResponse,
 )
+from mcpy_lens.wrapper.generator import WrapperGenerator
+from mcpy_lens.wrapper.config import WrapperConfig
 from mcpy_lens.validation import validate_script_entry_point
 
 logger = logging.getLogger(__name__)
@@ -1433,3 +1435,82 @@ if __name__ == "__main__":
         except Exception as e:
             logger.error(f"Error generating CLI wrapper for {script_id}: {e}")
             raise HTTPException(status_code=500, detail=f"CLI wrapper generation failed: {str(e)}")
+
+    async def generate_mcp_wrapper(self, script_id: str) -> dict[str, Any]:
+        """
+        Generate an MCP-compatible wrapper for a script.
+
+        Args:
+            script_id: The ID of the uploaded script
+
+        Returns:
+            Dictionary with information about the generated wrapper
+        """
+        if script_id not in self._scripts_metadata:
+            raise HTTPException(status_code=404, detail="Script not found")
+
+        metadata = self._scripts_metadata[script_id]
+
+        try:
+            # Get selected functions (if any)
+            selected_functions = self._function_selections.get(script_id, [])
+
+            # If no functions selected, use all functions
+            if not selected_functions:
+                selected_functions = [func.name for func in metadata.functions]
+
+            if not selected_functions:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No functions available for wrapper generation"
+                )
+
+            # Find script file path
+            upload_date = metadata.upload_time.strftime("%Y-%m-%d")
+            script_path = self.settings.uploaded_scripts_dir / upload_date / f"{script_id}.py"
+
+            # Fallback to root directory
+            if not script_path.exists():
+                script_path = self.settings.uploaded_scripts_dir / f"{script_id}.py"
+
+            if not script_path.exists():
+                raise HTTPException(status_code=404, detail="Script file not found on disk")
+
+            # Create output directory for the wrapper
+            wrapper_output_dir = self.settings.wrappers_dir / f"{script_id}_mcp_wrapper"
+            wrapper_output_dir.mkdir(parents=True, exist_ok=True)
+
+            # Generate the wrapper using WrapperGenerator
+            from mcpy_lens.wrapper.generator import WrapperGenerator
+            from mcpy_lens.wrapper.config import WrapperConfig
+
+            generator = WrapperGenerator(WrapperConfig.from_env())
+
+            generated_files = generator.generate_wrapper(
+                script_path=script_path,
+                script_metadata=metadata,
+                selected_functions=selected_functions,
+                output_dir=wrapper_output_dir
+            )
+
+            logger.info(f"Generated MCP wrapper for script {script_id}")
+
+            return {
+                "script_id": script_id,
+                "wrapper_type": "mcp",
+                "selected_functions": selected_functions,
+                "output_directory": str(wrapper_output_dir),
+                "generated_files": {k: str(v) for k, v in generated_files.items()},
+                "created_at": datetime.now().isoformat(),
+                "usage_instructions": {
+                    "command": f"python {generated_files['wrapper'].name}",
+                    "description": "Run the wrapper as an MCP server",
+                    "config_file": generated_files['config'].name
+                }
+            }
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error generating MCP wrapper for {script_id}: {e}")
+            raise HTTPException(status_code=500, detail=f"MCP wrapper generation failed: {str(e)}")

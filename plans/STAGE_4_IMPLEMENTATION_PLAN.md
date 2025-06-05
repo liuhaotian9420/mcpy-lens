@@ -56,6 +56,10 @@ To help me create the most effective implementation, I need your guidance on sev
 - Service-based allows better resource management but shared failure points
 - On-demand reduces resource usage but has startup latency
 
+**Answer**
+- The focus here is for users who upload files can easily migrate to other platforms or even perform the wrapper process locally. So the warpper shou;ld be decoupled with our service
+
+
 ### 2. **Function Execution Isolation**
 **Question**: How should individual Python functions be executed for security and reliability?
 
@@ -68,6 +72,11 @@ To help me create the most effective implementation, I need your guidance on sev
 - In-process is faster but less secure and isolated
 - Subprocess is safer but has higher overhead
 - Hybrid provides flexibility but adds complexity
+
+**Answer**
+- Let's make it using subprocess
+- Also it is worth noting that when users select multiple functions as tools, we can aggregate the tools together under a script, and then execute the script in a subprocess.
+- Make sure you remember that each subprocess is only used for a script-level execution
 
 ### 3. **Streaming Implementation**
 **Question**: What level of streaming granularity should we support?
@@ -82,6 +91,9 @@ To help me create the most effective implementation, I need your guidance on sev
 - Chunk-based balances responsiveness with efficiency
 - Event-based requires script cooperation but provides meaningful updates
 
+**Answer**
+- Line-based streaming
+
 ### 4. **Error Handling Strategy**
 **Question**: How detailed should error reporting be, and what information should be exposed?
 
@@ -94,6 +106,11 @@ To help me create the most effective implementation, I need your guidance on sev
 - Full transparency helps debugging but may expose sensitive information
 - Sanitized details balance utility with security
 - Minimal reporting is secure but may hinder troubleshooting
+
+**Answer**
+- I prefer the following two layers of logging:
+1. Any issue pertained to the execution of the function or python script is fully logged (full transparency)
+2. Any issue pertained to the wrapper itself is logged in a sanitized manner (sanitized details)
 
 ### 5. **Resource Limits Configuration**
 **Question**: How should resource limits be configured and enforced?
@@ -108,6 +125,9 @@ To help me create the most effective implementation, I need your guidance on sev
 - Per-script configuration provides flexibility but requires user input
 - Dynamic scaling is intelligent but complex to implement
 
+**Answer**
+- Global Limits
+
 ### 6. **Wrapper Generation Approach**
 **Question**: How should wrapper code be generated and customized?
 
@@ -120,6 +140,11 @@ To help me create the most effective implementation, I need your guidance on sev
 - Template-based is readable and customizable but may be harder to maintain
 - Code generation provides full control but is more complex
 - Configuration-driven is flexible but may have performance overhead
+
+**Answer**
+- In a reasonable process, users would have their tools discovered and metadata retrieved (look back to what you have done in Stage 3)
+- Use the Configuration-driven method and utilize the tool discovery / metadata generation as the source of truth
+- As a reminder, wrapper should also take consideration of handling tool calls from MCPclient
 
 ### 7. **Testing and Validation Strategy**
 **Question**: What testing approach should we use for the wrapper implementation?
@@ -134,22 +159,40 @@ To help me create the most effective implementation, I need your guidance on sev
 - Integration tests catch more issues but are slower
 - End-to-end tests provide confidence but are complex to set up
 
+**Answer**
+- Unit tests only, add tests in tests/ directory
+
 ## 📝 Additional Considerations
 
 ### Performance Requirements
 - What are the expected response times for function calls vs script execution?
+- Right now for this non-production version, it does not matter
+
 - How many concurrent wrapper processes should the system support?
+- Let's say 4-8
+
 - Are there specific memory or CPU constraints we need to consider?
+- Currently no
 
 ### Compatibility Requirements
 - Should wrappers work with existing MCP clients without modification?
+- You can refer to MCP inspector as a standard for MCP clients. Context7 and Playwright are tools you can use to test against this MCP client
+
 - Do we need to support any specific Python versions or dependencies?
+- Python >=3.10
+  
 - Are there any specific operating system requirements or limitations?
+- Please support at least Windows and Linux
 
 ### Monitoring and Observability
 - What level of logging and monitoring should be built into the wrappers?
+- Follow your instinct and best practice. But make it simple
+
 - Should wrapper execution metrics be collected and reported?
+- Not for now
+
 - How should wrapper health and status be monitored?
+- A separate service endpoint would be nice. But follow your instinct. 
 
 ## 🚀 Next Steps
 

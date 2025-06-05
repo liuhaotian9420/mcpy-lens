@@ -471,3 +471,26 @@ async def generate_whole_file_cli_wrapper(
     except Exception as e:
         logger.error(f"Error generating CLI wrapper for {script_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to generate CLI wrapper: {str(e)}")
+
+
+@file_router.post("/scripts/{script_id}/generate_mcp_wrapper")
+async def generate_mcp_wrapper(
+    script_id: str,
+    file_service: FileService = Depends(get_file_service)
+) -> dict:
+    """
+    Generate an MCP-compatible wrapper for the script.
+
+    - **script_id**: Unique identifier of the script
+
+    Returns information about the generated MCP wrapper including paths to all generated files.
+    """
+    logger.info(f"Generating MCP wrapper for script: {script_id}")
+
+    try:
+        return await file_service.generate_mcp_wrapper(script_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating MCP wrapper for {script_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate MCP wrapper: {str(e)}")
