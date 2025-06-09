@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from mcpy_lens.config import get_settings
 from mcpy_lens.exceptions import setup_exception_handlers
 from mcpy_lens.file_routes import file_router
+from mcpy_lens.adapter.routes import adapter_router, cleanup_adapter_service
 from mcpy_lens.logging_config import setup_logging
 from mcpy_lens.models import HealthCheckResponse
 from mcpy_lens.routing import RouteManager
@@ -42,6 +43,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown: Clean up resources
     if hasattr(app.state, "route_manager"):
         await app.state.route_manager.cleanup()
+
+    # Clean up adapter service
+    await cleanup_adapter_service()
 
     logging.info("mcpy-lens application shutdown complete")
 
@@ -99,6 +103,9 @@ def setup_routes(app: FastAPI) -> None:
             status="healthy", version="0.1.0", message="mcpy-lens service is running"
         )    # Include file management routes
     app.include_router(file_router)
+
+    # Include adapter routes
+    app.include_router(adapter_router)
 
 
 # ——— Application instance ———
