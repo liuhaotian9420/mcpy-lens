@@ -14,6 +14,8 @@ if src_dir not in sys.path:
 from .api_client import get_api_client, close_api_client
 from .interfaces.file_management import create_file_management_interface
 from .interfaces.service_config import create_service_config_interface
+from .interfaces.service_management import create_service_management_interface
+from .interfaces.service_testing import create_service_testing_interface
 
 logger = logging.getLogger(__name__)
 
@@ -103,13 +105,13 @@ def create_gradio_app() -> gr.Blocks:
             try:
                 api_client = get_api_client()
                 health = api_client.health_check()
-                
+
                 if health.get("status") == "healthy":
                     return "✅ **Backend Status**: Connected to FastAPI backend"
                 else:
                     return f"⚠️ **Backend Status**: {health.get('message', 'Unknown status')}"
             except Exception as e:
-                return f"❌ **Backend Status**: Cannot connect to FastAPI backend - {str(e)}"
+                return f"❌ **Backend Status**: Cannot connect to FastAPI backend - {str(e)}\n\n**Note**: Start the FastAPI backend with `python run.py` in another terminal."
         
         # Status display
         backend_status = gr.Markdown(check_backend_status())
@@ -130,34 +132,12 @@ def create_gradio_app() -> gr.Blocks:
             
             # Service Configuration Tab
             config_tab = create_service_config_interface()
-            
-            # Service Management Tab (placeholder for now)
-            with gr.Tab("🎛️ Service Management") as mgmt_tab:
-                gr.Markdown("## Service Management Dashboard")
-                gr.Markdown("*Coming soon - manage and monitor your MCP services*")
-                
-                # Placeholder content
-                gr.Markdown("""
-                This tab will include:
-                - Real-time service status monitoring
-                - Service start/stop/restart controls
-                - Performance metrics and logs
-                - Service health checks
-                """)
-            
-            # Service Testing Tab (placeholder for now)
-            with gr.Tab("🧪 Service Testing") as test_tab:
-                gr.Markdown("## Service Testing Interface")
-                gr.Markdown("*Coming soon - test your MCP services interactively*")
-                
-                # Placeholder content
-                gr.Markdown("""
-                This tab will include:
-                - Interactive tool testing forms
-                - Request/response visualization
-                - Real-time streaming output
-                - Request history and bookmarking
-                """)
+
+            # Service Management Tab
+            mgmt_tab = create_service_management_interface()
+
+            # Service Testing Tab
+            test_tab = create_service_testing_interface()
             
             # Configuration Management Tab (placeholder for now)
             with gr.Tab("📝 Configuration") as config_mgmt_tab:
