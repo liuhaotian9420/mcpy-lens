@@ -878,19 +878,23 @@ class FileService:
             logger.error(f"Error generating wrapper for {function_name} in {script_id}: {e}")
             raise HTTPException(status_code=500, detail=f"Wrapper generation failed: {str(e)}")
     
+    def set_service_manager(self, service_manager):
+        """Set the service manager for automatic registration."""
+        self._service_manager = service_manager
+
     async def register_script_as_tool_service(self, script_id: str) -> Dict[str, Any]:
         """
         Register an entire script as a tool service.
-        
+
         Args:
             script_id: The ID of the uploaded script
-            
+
         Returns:
             Dictionary with service registration information
         """
         if script_id not in self._scripts_metadata:
             raise HTTPException(status_code=404, detail="Script not found")
-        
+
         metadata = self._scripts_metadata[script_id]
         
         try:
@@ -954,11 +958,47 @@ class FileService:
                 "created_at": datetime.now().isoformat()
             }
             
-            # Save service metadata
+            # Save service metadata (legacy format)
             service_file = self.settings.services_dir / f"{script_id}_service.json"
             async with aiofiles.open(service_file, 'w', encoding='utf-8') as f:
                 await f.write(json.dumps(service_metadata, indent=2, default=str))
-            
+
+            # Auto-register with new service registry if available
+            if hasattr(self, '_service_manager') and self._service_manager:
+                try:
+                    # Convert to new service registry format
+                    from mcpy_lens.service_registry.models import ToolInfo
+
+                    tools = []
+                    for wrapper in wrappers:
+                        tool = ToolInfo(
+                            name=wrapper["function_name"],
+                            description=wrapper["schema"].get("description", ""),
+                            parameters=wrapper["schema"].get("input_schema", {}),
+                            return_type=wrapper["schema"].get("output_schema", {}).get("type", "Any")
+                        )
+                        tools.append(tool)
+
+                    # Create wrapper metadata for service registry
+                    wrapper_metadata = {
+                        "name": f"{metadata.filename}_{script_id}",
+                        "description": f"Auto-generated service for script {metadata.filename}",
+                        "type": "function",
+                        "hosting_mode": "sse",
+                        "tools": [tool.to_dict() for tool in tools]
+                    }
+
+                    # Register with service manager
+                    await self._service_manager.register_service_from_wrapper(
+                        script_id, wrapper_metadata, auto_activate=True
+                    )
+
+                    logger.info(f"Auto-registered script {script_id} with new service registry")
+
+                except Exception as e:
+                    logger.warning(f"Failed to auto-register with service registry: {e}")
+                    # Don't fail the whole operation if service registry fails
+
             return service_metadata
             
         except HTTPException:

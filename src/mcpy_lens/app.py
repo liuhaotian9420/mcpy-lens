@@ -11,6 +11,8 @@ from mcpy_lens.config import get_settings
 from mcpy_lens.exceptions import setup_exception_handlers
 from mcpy_lens.file_routes import file_router
 from mcpy_lens.adapter.routes import adapter_router, cleanup_adapter_service
+from mcpy_lens.service_registry.routes import service_registry_router, cleanup_service_manager, set_service_manager
+from mcpy_lens.service_registry.service_manager import ServiceManager
 from mcpy_lens.logging_config import setup_logging
 from mcpy_lens.models import HealthCheckResponse
 from mcpy_lens.routing import RouteManager
@@ -36,16 +38,38 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.route_manager = route_manager
     route_manager.attach_app(app)
 
+    # Initialize service manager
+    app.state.service_manager = ServiceManager(
+        services_dir=settings.services_dir,
+        wrappers_dir=settings.wrappers_dir,
+        route_manager=route_manager
+    )
+    await app.state.service_manager.start()
+
+    # Set service manager for dependency injection
+    set_service_manager(app.state.service_manager)
+
+    # Set service manager in file service for automatic registration
+    from mcpy_lens.file_routes import get_file_service
+    file_service = get_file_service()
+    file_service.set_service_manager(app.state.service_manager)
+
     logging.info("mcpy-lens application started successfully")
 
     yield
 
     # Shutdown: Clean up resources
+    if hasattr(app.state, "service_manager"):
+        await app.state.service_manager.stop()
+
     if hasattr(app.state, "route_manager"):
         await app.state.route_manager.cleanup()
 
     # Clean up adapter service
     await cleanup_adapter_service()
+
+    # Clean up service manager
+    await cleanup_service_manager()
 
     logging.info("mcpy-lens application shutdown complete")
 
@@ -106,6 +130,9 @@ def setup_routes(app: FastAPI) -> None:
 
     # Include adapter routes
     app.include_router(adapter_router)
+
+    # Include service registry routes
+    app.include_router(service_registry_router)
 
 
 # ——— Application instance ———
