@@ -29,9 +29,35 @@ def create_service_testing_interface() -> gr.Tab:
         with gr.Group():
             gr.Markdown("### Select Service and Tool")
             with gr.Row():
+                # Load services automatically on initialization
+                def load_initial_services():
+                    """Load services on page initialization."""
+                    try:
+                        api_client = get_api_client()
+                        result = api_client.list_services()
+
+                        if "error" in result:
+                            logger.error(f"Failed to load initial services: {result['error']}")
+                            return []
+
+                        services = result.get("services", [])
+                        choices = []
+                        for service in services:
+                            service_id = service.get("service_id", "")
+                            name = service.get("name", "Unknown")
+                            choices.append((f"{name} ({service_id[:8]}...)", service_id))
+
+                        logger.info(f"Loaded {len(choices)} services on initialization")
+                        return choices
+                    except Exception as e:
+                        logger.error(f"Error loading initial services: {e}")
+                        return []
+
+                initial_service_choices = load_initial_services()
+
                 service_dropdown = gr.Dropdown(
                     label="Select Service",
-                    choices=[],
+                    choices=initial_service_choices,
                     interactive=True,
                     allow_custom_value=False
                 )
@@ -113,28 +139,7 @@ def create_service_testing_interface() -> gr.Tab:
             save_request_btn = create_action_button("💾 Save Request", "secondary")
         
         # Event handlers
-        def load_services() -> List[Tuple[str, str]]:
-            """Load available services for dropdown."""
-            try:
-                api_client = get_api_client()
-                result = api_client.list_services()
-                
-                if "error" in result:
-                    logger.error(f"Failed to load services: {result['error']}")
-                    return []
-                
-                services = result.get("services", [])
-                choices = []
-                for service in services:
-                    service_id = service.get("service_id", "")
-                    name = service.get("name", "Unknown")
-                    choices.append((f"{name} ({service_id[:8]}...)", service_id))
-                
-                return choices
-                
-            except Exception as e:
-                logger.error(f"Error loading services: {e}")
-                return []
+
         
         def handle_service_selection(service_id: str) -> Tuple[gr.Dropdown, List[str], Dict[str, Any]]:
             """Handle service selection and load available tools."""
@@ -266,8 +271,50 @@ def create_service_testing_interface() -> gr.Tab:
             return "", {}, "", ""
         
         # Wire up event handlers
+        def update_service_dropdown():
+            """Update service dropdown with fresh data."""
+            try:
+                api_client = get_api_client()
+                result = api_client.list_services()
+
+                if "error" in result:
+                    logger.error(f"Failed to load services: {result['error']}")
+                    return gr.Dropdown(
+                        label="Select Service",
+                        choices=[],
+                        value=None,
+                        interactive=True,
+                        allow_custom_value=False
+                    )
+
+                services = result.get("services", [])
+                choices = []
+                for service in services:
+                    service_id = service.get("service_id", "")
+                    name = service.get("name", "Unknown")
+                    choices.append((f"{name} ({service_id[:8]}...)", service_id))
+
+                logger.info(f"Loaded {len(choices)} services for dropdown")
+                return gr.Dropdown(
+                    label="Select Service",
+                    choices=choices,
+                    value=None,
+                    interactive=True,
+                    allow_custom_value=False
+                )
+
+            except Exception as e:
+                logger.error(f"Error loading services: {e}")
+                return gr.Dropdown(
+                    label="Select Service",
+                    choices=[],
+                    value=None,
+                    interactive=True,
+                    allow_custom_value=False
+                )
+
         refresh_services_btn.click(
-            fn=load_services,
+            fn=update_service_dropdown,
             outputs=[service_dropdown]
         )
         
@@ -300,10 +347,6 @@ def create_service_testing_interface() -> gr.Tab:
             outputs=[execution_status, response_display, raw_output, streaming_output]
         )
         
-        # Load initial data
-        tab.load(
-            fn=load_services,
-            outputs=[service_dropdown]
-        )
-    
+        # Note: Users can click the refresh button to load initial data
+
     return tab

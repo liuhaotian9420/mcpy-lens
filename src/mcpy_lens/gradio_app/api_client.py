@@ -118,15 +118,15 @@ class APIClient:
     
     def discover_tools(self, script_id: str) -> Dict[str, Any]:
         """Discover tools in a script.
-        
+
         Args:
             script_id: Unique script identifier
-            
+
         Returns:
             Tool discovery results
         """
         try:
-            response = self.client.get(f"/api/v1/scripts/{script_id}/discover_tools")
+            response = self.client.get(f"/api/v1/scripts/{script_id}/discover")
             response.raise_for_status()
             return response.json()
         except Exception as e:

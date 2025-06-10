@@ -249,5 +249,101 @@
     "upload_time": "2025-06-03T18:29:15.068773",
     "validation_status": "passed",
     "security_status": "safe"
+  },
+  "f233109c-497a-46c4-acc8-6a48827ca371": {
+    "script_id": "f233109c-497a-46c4-acc8-6a48827ca371",
+    "filename": "simple_tool.py",
+    "functions": [
+      {
+        "name": "add_two_numbers",
+        "description": "_summary_\n\n    Args:\n        a (int): _description_\n        b (int): _description_\n\n    Returns:\n        int: _description_",
+        "parameters": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "line_number": 6
+      },
+      {
+        "name": "subtract",
+        "description": "Subtract b from a and return the result.\n    \n    Args:\n        a (int): The first number\n        b (int): The number to subtract from a\n        \n    Returns:\n        int: The result of a - b",
+        "parameters": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "line_number": 18
+      }
+    ],
+    "imports": [],
+    "dependencies": [],
+    "file_size": 555,
+    "upload_time": "2025-06-09T15:29:48.818161",
+    "validation_status": "passed",
+    "security_status": "safe"
+  },
+  "4256754b-a44c-4022-b0d3-f421795b4c86": {
+    "script_id": "4256754b-a44c-4022-b0d3-f421795b4c86",
+    "filename": "simple_tool.py",
+    "functions": [
+      {
+        "name": "add_two_numbers",
+        "description": "_summary_\n\n    Args:\n        a (int): _description_\n        b (int): _description_\n\n    Returns:\n        int: _description_",
+        "parameters": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "line_number": 6
+      },
+      {
+        "name": "subtract",
+        "description": "Subtract b from a and return the result.\n    \n    Args:\n        a (int): The first number\n        b (int): The number to subtract from a\n        \n    Returns:\n        int: The result of a - b",
+        "parameters": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "line_number": 18
+      }
+    ],
+    "imports": [],
+    "dependencies": [],
+    "file_size": 555,
+    "upload_time": "2025-06-09T15:31:06.229353",
+    "validation_status": "passed",
+    "security_status": "safe"
+  },
+  "678d572d-c0ad-4bdb-a203-20e3b55815b4": {
+    "script_id": "678d572d-c0ad-4bdb-a203-20e3b55815b4",
+    "filename": "simple_tool.py",
+    "functions": [
+      {
+        "name": "add_two_numbers",
+        "description": "_summary_\n\n    Args:\n        a (int): _description_\n        b (int): _description_\n\n    Returns:\n        int: _description_",
+        "parameters": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "line_number": 6
+      },
+      {
+        "name": "subtract",
+        "description": "Subtract b from a and return the result.\n    \n    Args:\n        a (int): The first number\n        b (int): The number to subtract from a\n        \n    Returns:\n        int: The result of a - b",
+        "parameters": {
+          "a": "int",
+          "b": "int"
+        },
+        "return_type": "int",
+        "line_number": 18
+      }
+    ],
+    "imports": [],
+    "dependencies": [],
+    "file_size": 555,
+    "upload_time": "2025-06-09T16:09:54.026719",
+    "validation_status": "passed",
+    "security_status": "safe"
   }
 }

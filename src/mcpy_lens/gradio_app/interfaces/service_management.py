@@ -202,10 +202,6 @@ def create_service_management_interface() -> gr.Tab:
             outputs=[action_status, service_details, health_status]
         )
         
-        # Load initial data
-        tab.load(
-            fn=load_services_list,
-            outputs=[services_table]
-        )
-    
+        # Note: Users can click the refresh button to load initial data
+
     return tab

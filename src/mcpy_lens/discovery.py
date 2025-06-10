@@ -130,7 +130,16 @@ def discover_functions(
                 if inspect.isfunction(member):
                     logger.debug(f"Member {name} is a function. Module: {member.__module__}, Expected: {module.__name__}")
 
-                    if member.__module__ == module.__name__:
+                    # Check if function is defined in this file
+                    # For dynamically loaded modules, we need to be more flexible with module name matching
+                    is_local_function = (
+                        member.__module__ == module.__name__ or  # Exact match
+                        member.__module__ == "__main__" or       # Functions from scripts run as main
+                        member.__module__ is None or             # Functions without module info
+                        member.__module__ == file_path.stem      # Module name matches file stem
+                    )
+
+                    if is_local_function:
                         # Skip private functions (starting with underscore)
                         if name.startswith("_") and not (name.startswith("__") and name.endswith("__")):
                             logger.debug(f"Skipping private function: {name} in {file_path}")

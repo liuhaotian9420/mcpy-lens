@@ -53,6 +53,11 @@ def create_file_management_interface() -> gr.Tab:
         # Script metadata section
         gr.Markdown("### Script Metadata")
         metadata_display = gr.JSON(label="Script Information")
+
+        # Function discovery section
+        gr.Markdown("### Discovered Functions")
+        discover_btn = create_action_button("🔍 Discover Functions", "secondary")
+        functions_display = gr.JSON(label="Functions", value={"message": "Select a script and click 'Discover Functions' to see available functions"})
         
         # Scripts list section
         with gr.Row():
@@ -62,7 +67,7 @@ def create_file_management_interface() -> gr.Tab:
         scripts_table = gr.DataFrame(
             headers=["ID", "Filename", "Status", "Functions", "Size", "Upload Date", "Actions"],
             datatype=["str", "str", "str", "str", "str", "str", "str"],
-            interactive=False,
+            interactive=True,
             wrap=True
         )
         
@@ -127,9 +132,9 @@ def create_file_management_interface() -> gr.Tab:
                 for script in scripts:
                     functions = script.get("functions", [])
                     function_count = len(functions) if functions else 0
-                    
+
                     table_data.append([
-                        script.get("script_id", "")[:8] + "...",  # Shortened ID
+                        script.get("script_id", ""),  # Full ID for selection
                         script.get("filename", "Unknown"),
                         create_status_badge(script.get("status", "unknown")),
                         f"{function_count} functions",
@@ -169,19 +174,64 @@ def create_file_management_interface() -> gr.Tab:
             """Handle script deletion."""
             if not script_id.strip():
                 return "❌ Please enter a script ID", load_scripts_list()
-            
+
             try:
                 api_client = get_api_client()
                 result = api_client.delete_script(script_id)
-                
+
                 if "error" in result:
                     return f"❌ Failed to delete script: {result['error']}", load_scripts_list()
-                
+
                 return f"✅ Script {script_id} deleted successfully", load_scripts_list()
-                
+
             except Exception as e:
                 logger.error(f"Error deleting script: {e}")
                 return f"❌ Error: {str(e)}", load_scripts_list()
+
+        def handle_discover_functions(script_id: str) -> Dict[str, Any]:
+            """Handle function discovery for a script."""
+            if not script_id.strip():
+                return {"error": "Please enter a script ID"}
+
+            try:
+                api_client = get_api_client()
+                result = api_client.discover_tools(script_id)
+
+                if "error" in result:
+                    return {"error": f"Failed to discover functions: {result['error']}"}
+
+                # Format the response for better display
+                tools = result.get("tools", [])
+                if not tools:
+                    return {"message": "No functions found in this script"}
+
+                formatted_result = {
+                    "script_id": result.get("file_id", script_id),
+                    "total_functions": result.get("total", 0),
+                    "discovery_time": result.get("discovery_time", ""),
+                    "functions": []
+                }
+
+                for tool in tools:
+                    formatted_result["functions"].append({
+                        "name": tool.get("name", ""),
+                        "description": tool.get("description", ""),
+                        "parameters": tool.get("parameters", {}),
+                        "return_type": tool.get("return_type", "")
+                    })
+
+                return formatted_result
+
+            except Exception as e:
+                logger.error(f"Error discovering functions: {e}")
+                return {"error": f"Error: {str(e)}"}
+
+        def handle_table_select(evt: gr.SelectData) -> str:
+            """Handle table row selection."""
+            if evt.index is not None and len(evt.index) >= 2:
+                # Get the script ID from the first column
+                return evt.value if evt.index[1] == 0 else ""
+            return ""
         
         # Wire up event handlers
         upload_btn.click(
@@ -206,11 +256,18 @@ def create_file_management_interface() -> gr.Tab:
             inputs=[selected_script_id],
             outputs=[action_status, scripts_table]
         )
-        
-        # Load initial data
-        tab.load(
-            fn=load_scripts_list,
-            outputs=[scripts_table]
+
+        discover_btn.click(
+            fn=handle_discover_functions,
+            inputs=[selected_script_id],
+            outputs=[functions_display]
         )
-    
+
+        scripts_table.select(
+            fn=handle_table_select,
+            outputs=[selected_script_id]
+        )
+
+        # Note: Users can click the refresh button to load initial data
+
     return tab

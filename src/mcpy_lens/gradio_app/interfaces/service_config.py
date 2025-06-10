@@ -29,9 +29,35 @@ def create_service_config_interface() -> gr.Tab:
         with gr.Group():
             gr.Markdown("### Step 1: Select Script")
             with gr.Row():
+                # Load scripts automatically on initialization
+                def load_initial_scripts():
+                    """Load scripts on page initialization."""
+                    try:
+                        api_client = get_api_client()
+                        result = api_client.list_scripts(limit=100)
+
+                        if "error" in result:
+                            logger.error(f"Failed to load initial scripts: {result['error']}")
+                            return []
+
+                        scripts = result.get("scripts", [])
+                        choices = []
+                        for script in scripts:
+                            script_id = script.get("script_id", "")
+                            filename = script.get("filename", "Unknown")
+                            choices.append((f"{filename} ({script_id[:8]}...)", script_id))
+
+                        logger.info(f"Loaded {len(choices)} scripts on initialization")
+                        return choices
+                    except Exception as e:
+                        logger.error(f"Error loading initial scripts: {e}")
+                        return []
+
+                initial_choices = load_initial_scripts()
+
                 script_dropdown = gr.Dropdown(
                     label="Select Script",
-                    choices=[],
+                    choices=initial_choices,
                     interactive=True,
                     allow_custom_value=False
                 )
@@ -117,68 +143,53 @@ def create_service_config_interface() -> gr.Tab:
             creation_status = gr.Markdown("")
         
         # Event handlers
-        def load_scripts() -> List[Tuple[str, str]]:
-            """Load available scripts for dropdown."""
-            try:
-                api_client = get_api_client()
-                result = api_client.list_scripts(limit=100)
-                
-                if "error" in result:
-                    logger.error(f"Failed to load scripts: {result['error']}")
-                    return []
-                
-                scripts = result.get("scripts", [])
-                choices = []
-                for script in scripts:
-                    script_id = script.get("script_id", "")
-                    filename = script.get("filename", "Unknown")
-                    choices.append((f"{filename} ({script_id[:8]}...)", script_id))
-                
-                return choices
-                
-            except Exception as e:
-                logger.error(f"Error loading scripts: {e}")
-                return []
+
         
-        def handle_script_selection(script_id: str) -> Tuple[Dict[str, Any], gr.Group, List[str], Dict[str, Any]]:
+        def handle_script_selection(script_id: str) -> Tuple[Dict[str, Any], gr.CheckboxGroup, Dict[str, Any]]:
             """Handle script selection and load script details."""
             if not script_id:
-                return {}, gr.Group(visible=False), [], {}
-            
+                return {}, gr.CheckboxGroup(choices=[], value=[]), {}
+
             try:
                 api_client = get_api_client()
-                
+
                 # Get script details
                 script_result = api_client.get_script(script_id)
                 if "error" in script_result:
-                    return {"error": script_result["error"]}, gr.Group(visible=False), [], {}
-                
+                    return {"error": script_result["error"]}, gr.CheckboxGroup(choices=[], value=[]), {}
+
                 # Get tool discovery results
                 tools_result = api_client.discover_tools(script_id)
+
                 if "error" in tools_result:
-                    return script_result, gr.Group(visible=False), [], {}
-                
+                    return script_result, gr.CheckboxGroup(choices=[], value=[]), {}
+
                 # Extract function information
-                functions = tools_result.get("functions", [])
+                functions = tools_result.get("tools", [])
+
                 function_choices = []
                 function_details = {}
-                
+
                 for func in functions:
                     func_name = func.get("name", "")
-                    func_doc = func.get("docstring", "No description")
+                    func_doc = func.get("description", "No description")
                     function_choices.append(func_name)
                     function_details[func_name] = func
-                
+
                 return (
                     script_result,
-                    gr.Group(visible=True),
-                    function_choices,
+                    gr.CheckboxGroup(
+                        label="Available Functions",
+                        choices=function_choices,
+                        value=[],
+                        interactive=True
+                    ),
                     function_details
                 )
-                
+
             except Exception as e:
                 logger.error(f"Error handling script selection: {e}")
-                return {"error": str(e)}, gr.Group(visible=False), [], {}
+                return {"error": str(e)}, gr.CheckboxGroup(choices=[], value=[]), {}
         
         def handle_hosting_mode_change(mode: str) -> Tuple[gr.Group, gr.Group]:
             """Handle hosting mode change to show/hide relevant sections."""
@@ -271,15 +282,57 @@ def create_service_config_interface() -> gr.Tab:
                 return f"❌ Error: {str(e)}"
         
         # Wire up event handlers
+        def update_script_dropdown():
+            """Update script dropdown with fresh data."""
+            try:
+                api_client = get_api_client()
+                result = api_client.list_scripts(limit=100)
+
+                if "error" in result:
+                    logger.error(f"Failed to load scripts: {result['error']}")
+                    return gr.Dropdown(
+                        label="Select Script",
+                        choices=[],
+                        value=None,
+                        interactive=True,
+                        allow_custom_value=False
+                    )
+
+                scripts = result.get("scripts", [])
+                choices = []
+                for script in scripts:
+                    script_id = script.get("script_id", "")
+                    filename = script.get("filename", "Unknown")
+                    choices.append((f"{filename} ({script_id[:8]}...)", script_id))
+
+
+                return gr.Dropdown(
+                    label="Select Script",
+                    choices=choices,
+                    value=None,
+                    interactive=True,
+                    allow_custom_value=False
+                )
+
+            except Exception as e:
+                logger.error(f"Error loading scripts: {e}")
+                return gr.Dropdown(
+                    label="Select Script",
+                    choices=[],
+                    value=None,
+                    interactive=True,
+                    allow_custom_value=False
+                )
+
         refresh_scripts_btn.click(
-            fn=load_scripts,
+            fn=update_script_dropdown,
             outputs=[script_dropdown]
         )
         
         script_dropdown.change(
             fn=handle_script_selection,
             inputs=[script_dropdown],
-            outputs=[script_info, function_selection_group, available_functions, function_details]
+            outputs=[script_info, available_functions, function_details]
         )
         
         hosting_mode.change(
@@ -312,10 +365,6 @@ def create_service_config_interface() -> gr.Tab:
             outputs=[creation_status]
         )
         
-        # Load initial data
-        tab.load(
-            fn=load_scripts,
-            outputs=[script_dropdown]
-        )
-    
+        # Note: Users can click the refresh button to load initial data
+
     return tab
